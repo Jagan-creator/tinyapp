@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Jagan-creator/tinyapp/issues"
   },
-  "homepage": "https://github.com/Jagan-creator/tinyapp#readme"
+  "homepage": "https://github.com/Jagan-creator/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
