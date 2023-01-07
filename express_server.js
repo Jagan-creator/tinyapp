@@ -28,8 +28,17 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body);
-  res.send("Ok");
+  urlDatabase[generateRandomString()] = req.body.longURL;
+  res.redirect("/urls/");
 });
+
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  console.log(longURL);
+  console.log(urlDatabase);
+  res.redirect(longURL);
+})
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
