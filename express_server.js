@@ -12,22 +12,32 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-function generateRandomString() {
+const generateRandomString = () => {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let results = '';
-  for (var i = 6; i > 0; --i) results += chars[Math.round(Math.random() * (chars.length - 1))];
+  for (let i = 6; i > 0; --i) results += chars[Math.round(Math.random() * (chars.length - 1))];
   return results;
-}
+};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
+
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
+});
+
+//get urls to index page
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars);
 });
 
+//new url is posted
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   console.log(req.body);
@@ -35,16 +45,16 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", templateVars);
+  res.render("urls_new");
 });
 
+//redirect to longURL
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
@@ -59,31 +69,27 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
+//post for delete
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 
+//post for edit
 app.post("/urls/:shortURL/edit", (req, res) => {
   const id = req.params.shortURL;
   urlDatabase[id] = req.body.longURL;
   res.redirect(`/urls/${id}`);
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
+//post for login
 app.post("/login", (req, res) => {
   console.log(req.body);
   res.cookie("username", req.body.username);
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
+//post for logout
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
