@@ -19,16 +19,42 @@ const generateRandomString = () => {
   return results;
 };
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
+const registerUser = (email, password) => {
+  const id = generateRandomString();
+  users[id] = {
+    id,
+    email,
+    password,
+  };
+  return id;
+};
+
+const registerConfirm = (email, password) => {
+  if (email && password) {
+    return true;
+  };
+  return false;
+};
+
+const registerEmail = (email) => {
+  return Object.values(users).find(user => user.email === email);
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //get urls to index page
@@ -100,6 +126,20 @@ app.get("/register", (req, res) => {
   templateVars = { username:req.cookies["username"] }
   res.render("urls_register", templateVars);
   res.redirect("/urls");
+});
+
+//post for register
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+  if (!registerConfirm(email, password)) {
+    res.status(400).send("Please enter a valid email or password!");
+  } else if (registerEmail(email)) {
+    res.status(400).send("This email is taken!");
+  } else {
+    const id = registerUser(email, password);
+    res.cookie("username", req.body.username);
+    res.redirect("/urls");
+  }
 })
 
 app.listen(PORT, () => {
