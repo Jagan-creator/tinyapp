@@ -59,7 +59,7 @@ app.get("/", (req, res) => {
 
 //get urls to index page
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars);
 });
 
@@ -72,12 +72,13 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("urls_new", templateVars);
 });
 
 //redirect to longURL
@@ -118,12 +119,13 @@ app.post("/login", (req, res) => {
 //post for logout
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
 //get for register
 app.get("/register", (req, res) => {
-  templateVars = { username:req.cookies["username"] }
+  templateVars = { user: users[req.cookies["user_id"]] }
   res.render("urls_register", templateVars);
   res.redirect("/urls");
 });
@@ -136,8 +138,8 @@ app.post("/register", (req, res) => {
   } else if (registerEmail(email)) {
     res.status(400).send("This email is taken!");
   } else {
-    const id = registerUser(email, password);
-    res.cookie("username", req.body.username);
+    const user_id = registerUser(email, password);
+    res.cookie("user_id", user_id);
     res.redirect("/urls");
   }
 })
