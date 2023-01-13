@@ -19,6 +19,10 @@ const generateRandomString = () => {
   return results;
 };
 
+const confirmURL = (URL, data) => {
+  return data[URL];
+};
+
 const users = {
   userRandomID: {
     id: "userRandomID",
@@ -66,10 +70,25 @@ app.get("/urls", (req, res) => {
 
 //new url is posted
 app.post("/urls", (req, res) => {
+  let templateVars = { user: users[req.cookies["user_id"]] };
+  if (!templateVars.user) {
+    res.status(401).send("You must be logged in to shorten a URL!");
+  } else {
   const shortURL = generateRandomString();
   console.log(req.body);
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
+  }
+});
+
+//check if user is logged in before creating new URL
+app.get("/urls/new", (req, res) => {
+  let templateVars = { user: users[req.cookies["user_id"]] };
+  if (templateVars.user) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -77,18 +96,15 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("urls_new", templateVars);
-});
-
 //redirect to longURL
 app.get("/u/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
-  console.log(longURL);
-  console.log(urlDatabase);
-  res.redirect(longURL);
+  let shortURL = req.params.shortURL;
+  if (confirmURL(shortURL, urlDatabase)) {
+    const longURL = urlDatabase[shortURL];
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("The URL you are requesting is not available.");
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
@@ -113,7 +129,11 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 //get for login
 app.get("/login", (req, res) => {
   let templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("urls_login", templateVars);
+  if (templateVars.user) {
+    res.redirect("/urls");
+  } else {
+    res.render("urls_login", templateVars);
+  }
 });
 
 //post for login which checks if email matches and then password match
@@ -140,7 +160,11 @@ app.post("/logout", (req, res) => {
 //get for register
 app.get("/register", (req, res) => {
   templateVars = { user: users[req.cookies["user_id"]] }
-  res.render("urls_register", templateVars);
+  if (templateVars.user) {
+    res.redirect("/urls");
+  } else {
+    res.render("urls_register", templateVars);
+  }
 });
 
 //post for register
