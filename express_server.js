@@ -116,19 +116,18 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-//post for login
+//post for login which checks if email matches and then password match
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const user = findUserEmail(email);
   if (!user) {
-    return res.status(403).send("Email does not match!");
+    return res.status(403).send("Email does not exist!");
   }
   if (!passwordCheck(user, password)) {
    return res.status(403).send("Password is incorrect!");
   }
-    const user_id = registerUser(email, password);
     console.log(req.body);
-    res.cookie("user_id", user_id);
+    res.cookie("user_id", user.id);
     res.redirect("/urls");
 });
 
