@@ -16,13 +16,18 @@
   <title>Register</title>
 </head>
   <body>
-    <%- include('partials/_header') %> 
-    <h1>User Sign Up</h1>
+    <%- include('partials/_header') %>
+    <br/>
+    <h1>Create Account</h1>
     <form method="POST" action="/register">
       <label for="email">Email:</label>
+      <br/>
       <input id="email" type="email" name="email" required />
+      <br/>
       <label for="password">Password:</label>
+      <br/>
       <input id="password" type="password" name="password" required />
+      <br/>
       <br/>
       <p><em>You will be redirected to the main page once you have registered!</em></p>
       <button type="submit">register</button>
