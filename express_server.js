@@ -109,6 +109,12 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+//get for login
+app.get("/login", (req, res) => {
+  let templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("urls_login", templateVars);
+});
+
 //post for login
 app.post("/login", (req, res) => {
   console.log(req.body);
@@ -127,7 +133,6 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => {
   templateVars = { user: users[req.cookies["user_id"]] }
   res.render("urls_register", templateVars);
-  res.redirect("/urls");
 });
 
 //post for register
@@ -142,7 +147,7 @@ app.post("/register", (req, res) => {
     res.cookie("user_id", user_id);
     res.redirect("/urls");
   }
-})
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
