@@ -42,15 +42,16 @@ const registerUser = (email, password) => {
   return id;
 };
 
-const registerConfirm = (email, password) => {
-  if (email && password) {
-    return true;
-  };
-  return false;
+const findUserEmail = (email) => {
+  return Object.values(users).find(user => user.email === email);
 };
 
-const registerEmail = (email) => {
-  return Object.values(users).find(user => user.email === email);
+const passwordCheck= (user, password) => {
+  if (user.password === password) {
+    return true;
+  } else {
+    return false;
+  }
 };
 
 app.get("/", (req, res) => {
@@ -117,16 +118,25 @@ app.get("/login", (req, res) => {
 
 //post for login
 app.post("/login", (req, res) => {
-  console.log(req.body);
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
+  const { email, password } = req.body;
+  const user = findUserEmail(email);
+  if (!user) {
+    return res.status(403).send("Email does not match!");
+  }
+  if (!passwordCheck(user, password)) {
+   return res.status(403).send("Password is incorrect!");
+  }
+    const user_id = registerUser(email, password);
+    console.log(req.body);
+    res.cookie("user_id", user_id);
+    res.redirect("/urls");
 });
 
 //post for logout
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 //get for register
@@ -138,12 +148,13 @@ app.get("/register", (req, res) => {
 //post for register
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
-  if (!registerConfirm(email, password)) {
-    res.status(400).send("Please enter a valid email or password!");
-  } else if (registerEmail(email)) {
-    res.status(400).send("This email is taken!");
+  if (email === '' || password === '') {
+    res.status(403).send("Please enter a valid email or password!");
+  } else if (findUserEmail(email)) {
+    res.status(403).send("This email is taken!");
   } else {
     const user_id = registerUser(email, password);
+    console.log(req.body);
     res.cookie("user_id", user_id);
     res.redirect("/urls");
   }
