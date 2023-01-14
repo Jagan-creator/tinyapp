@@ -8,8 +8,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookie());
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://lighthouselabs.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "http://www.google.com",
+    userID: "aJ48lW",
+  },
 };
 
 const generateRandomString = () => {
@@ -70,13 +76,13 @@ app.get("/urls", (req, res) => {
 
 //new url is posted
 app.post("/urls", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
+  let templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   if (!templateVars.user) {
     res.status(401).send("You must be logged in to shorten a URL!");
   } else {
   const shortURL = generateRandomString();
-  console.log(req.body);
-  urlDatabase[shortURL] = req.body.longURL;
+  const newURL = req.body.longURL
+  urlDatabase[shortURL] = { longURL: newURL, userID: templateVars.user };
   res.redirect(`/urls/${shortURL}`);
   }
 });
@@ -92,7 +98,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
@@ -100,7 +106,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (confirmURL(shortURL, urlDatabase)) {
-    const longURL = urlDatabase[shortURL];
+    const longURL = urlDatabase[shortURL].longURL;
     res.redirect(longURL);
   } else {
     res.status(404).send("The URL you are requesting is not available.");
@@ -109,7 +115,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   console.log(req.params.shortURL, req.body);
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
@@ -122,7 +128,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //post for edit
 app.post("/urls/:shortURL/edit", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
