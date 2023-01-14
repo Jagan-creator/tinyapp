@@ -64,14 +64,34 @@ const passwordCheck= (user, password) => {
   }
 };
 
+const urlsForUser = (id, database) => {
+  let userURLS = {};
+  console.log("id", id);
+  for (let key in database) {
+    if (database[key].userID === id) {
+      userURLS[key] = database[key];
+    }
+  }
+  console.log("db", database);
+  console.log("test", userURLS);
+  return userURLS;
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-//get urls to index page
+//get urls to index page and check for user login
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
-  res.render("urls_index", templateVars);
+  let templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  if (!templateVars.user) {
+    res.render("urls_errors");
+  } else {
+    const userID = req.cookies["user_id"];
+    const userURLS = urlsForUser(userID, urlDatabase);
+    let templateVars = { urls: userURLS, user: users[req.cookies["user_id"]] };
+    res.render("urls_index", templateVars);
+  }
 });
 
 //new url is posted
@@ -82,7 +102,7 @@ app.post("/urls", (req, res) => {
   } else {
   const shortURL = generateRandomString();
   const newURL = req.body.longURL
-  urlDatabase[shortURL] = { longURL: newURL, userID: templateVars.user };
+  urlDatabase[shortURL] = { longURL: newURL, userID: req.cookies["user_id"] };
   res.redirect(`/urls/${shortURL}`);
   }
 });
