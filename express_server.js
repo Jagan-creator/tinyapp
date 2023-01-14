@@ -64,6 +64,7 @@ const passwordCheck= (user, password) => {
   }
 };
 
+//for testing if the urls for a specific user id are equal to current user id
 const urlsForUser = (id, database) => {
   let userURLS = {};
   for (let key in database) {
@@ -137,14 +138,20 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //post for delete
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+    return res.status(403).send("You are not able to delete this URL");
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 
 //post for edit
 app.post("/urls/:shortURL/edit", (req, res) => {
+  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+    return res.status(403).send("You are not able to edit this URL");
+  }
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL].longURL = req.body.longURL;
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
