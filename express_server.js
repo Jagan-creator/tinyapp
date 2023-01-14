@@ -66,14 +66,11 @@ const passwordCheck= (user, password) => {
 
 const urlsForUser = (id, database) => {
   let userURLS = {};
-  console.log("id", id);
   for (let key in database) {
     if (database[key].userID === id) {
       userURLS[key] = database[key];
     }
   }
-  console.log("db", database);
-  console.log("test", userURLS);
   return userURLS;
 };
 
@@ -134,7 +131,6 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  console.log(req.params.shortURL, req.body);
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
@@ -172,7 +168,6 @@ app.post("/login", (req, res) => {
   if (!passwordCheck(user, password)) {
    return res.status(403).send("Password is incorrect!");
   }
-    console.log(req.body);
     res.cookie("user_id", user.id);
     res.redirect("/urls");
 });
@@ -202,7 +197,6 @@ app.post("/register", (req, res) => {
     res.status(403).send("This email is taken!");
   } else {
     const user_id = registerUser(email, password);
-    console.log(req.body);
     res.cookie("user_id", user_id);
     res.redirect("/urls");
   }
