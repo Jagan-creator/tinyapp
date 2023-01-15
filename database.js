@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 
+//storage of URL's in the database
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://lighthouselabs.ca",
@@ -11,6 +12,7 @@ const urlDatabase = {
   },
 };
 
+//storage fo user information in the database
 const users = {
   userRandomID: {
     id: "userRandomID",

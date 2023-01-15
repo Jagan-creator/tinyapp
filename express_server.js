@@ -1,3 +1,4 @@
+// REQUIRED
 const express = require("express");
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
@@ -6,18 +7,29 @@ const { urlDatabase, users } = require("./database");
 const app = express();
 const PORT = 8080;
 
+// MIDDLEWARE
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: "session",
   keys: ["user_id"]
-}))
+}));
 
+// GET AND POST CALLS
+// redirects user to register or login if they have not or sends to urls_index if they have
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
+  if (!templateVars.user) {
+    res.render("urls_errors");
+  } else {
+    const userID = req.session.user_id;
+    const userURLS = urlsForUser(userID);
+    let templateVars = { urls: userURLS, user: users[req.session.user_id] };
+    res.render("urls_index", templateVars);
+  }
 });
 
-//get urls to index page and check for user login
+// redirects user to register or login if they have not or sends to urls_index if they have
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   if (!templateVars.user) {
@@ -30,20 +42,20 @@ app.get("/urls", (req, res) => {
   }
 });
 
-//new url is posted
+//requires user to login and if they are then they can shorten URL's
 app.post("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   if (!templateVars.user) {
     res.status(401).send("You must be logged in to shorten a URL!");
   } else {
-  const shortURL = generateRandomString();
-  const newURL = req.body.longURL
-  urlDatabase[shortURL] = { longURL: newURL, userID: req.session.user_id };
-  res.redirect(`/urls/${shortURL}`);
+    const shortURL = generateRandomString();
+    const newURL = req.body.longURL;
+    urlDatabase[shortURL] = { longURL: newURL, userID: req.session.user_id };
+    res.redirect(`/urls/${shortURL}`);
   }
 });
 
-//check if user is logged in before creating new URL
+//requires user to login and if they are then they can access the page to make new URL's
 app.get("/urls/new", (req, res) => {
   let templateVars = { user: users[req.session.user_id] };
   if (templateVars.user) {
@@ -53,12 +65,13 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+//render shortURL page with appropriate information
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
   res.render("urls_show", templateVars);
 });
 
-//redirect to longURL
+//checks to see if long URL is working and if so it will redirect the user to the new page
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (confirmURL(shortURL, urlDatabase)) {
@@ -69,6 +82,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
+//checks if user is able to edit URL from given link and then redirects to /urls if they are able to
 app.post("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to edit this URL");
@@ -77,7 +91,7 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
-//post for delete
+//checks if user is able to delete URL and then redirects to /urls if they are able to
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to delete this URL");
@@ -86,7 +100,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-//post for edit
+//checks if user is able to edit URL and then redirects to /urls if they are able to
 app.post("/urls/:shortURL/edit", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to edit this URL");
@@ -96,7 +110,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-//get for login
+//if already logged in it will redirect to /urls and if not it will render the login page
 app.get("/login", (req, res) => {
   let templateVars = { user: users[req.session.user_id] };
   if (templateVars.user) {
@@ -106,7 +120,7 @@ app.get("/login", (req, res) => {
   }
 });
 
-//post for login which checks if email matches and then password match
+//checks if the user email and password is in the database to accept login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const user = findUserEmail(email);
@@ -114,21 +128,21 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Email does not exist!");
   }
   if (!bcrypt.compareSync(password, user.password)) {
-   return res.status(403).send("Password is incorrect!");
+    return res.status(403).send("Password is incorrect!");
   }
-    req.session.user_id = user.id;
-    res.redirect("/urls");
+  req.session.user_id = user.id;
+  res.redirect("/urls");
 });
 
-//post for logout
+//logging out will redirect you back to the login page
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/login");
 });
 
-//get for register
+//checks if user is already logged in and if not the server will render the registration page
 app.get("/register", (req, res) => {
-  templateVars = { user: users[req.session.user_id] }
+  let templateVars = { user: users[req.session.user_id] };
   if (templateVars.user) {
     res.redirect("/urls");
   } else {
@@ -136,7 +150,7 @@ app.get("/register", (req, res) => {
   }
 });
 
-//post for register
+//checks if email is already taken for registration and that they have entered a valid email and password
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
