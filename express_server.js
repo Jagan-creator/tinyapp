@@ -1,12 +1,15 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-const cookie = require("cookie-parser");
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookie());
+app.use(cookieSession({
+  name: "session",
+  keys: ["user_id"]
+}))
 
 const urlDatabase = {
   b6UTxQ: {
@@ -42,7 +45,6 @@ const users = {
     password: bcrypt.hashSync("passwordTwo", 10),
   },
 };
-console.log("user", users)
 
 const registerUser = (email, password) => {
   const id = generateRandomString();
@@ -83,33 +85,33 @@ app.get("/", (req, res) => {
 
 //get urls to index page and check for user login
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   if (!templateVars.user) {
     res.render("urls_errors");
   } else {
-    const userID = req.cookies["user_id"];
+    const userID = req.session.user_id;
     const userURLS = urlsForUser(userID, urlDatabase);
-    let templateVars = { urls: userURLS, user: users[req.cookies["user_id"]] };
+    let templateVars = { urls: userURLS, user: users[req.session.user_id] };
     res.render("urls_index", templateVars);
   }
 });
 
 //new url is posted
 app.post("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   if (!templateVars.user) {
     res.status(401).send("You must be logged in to shorten a URL!");
   } else {
   const shortURL = generateRandomString();
   const newURL = req.body.longURL
-  urlDatabase[shortURL] = { longURL: newURL, userID: req.cookies["user_id"] };
+  urlDatabase[shortURL] = { longURL: newURL, userID: req.session.user_id };
   res.redirect(`/urls/${shortURL}`);
   }
 });
 
 //check if user is logged in before creating new URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
+  let templateVars = { user: users[req.session.user_id] };
   if (templateVars.user) {
     res.render("urls_new", templateVars);
   } else {
@@ -118,7 +120,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
   res.render("urls_show", templateVars);
 });
 
@@ -134,7 +136,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to edit this URL");
   }
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
@@ -143,7 +145,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //post for delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to delete this URL");
   }
   delete urlDatabase[req.params.shortURL];
@@ -152,7 +154,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //post for edit
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (urlDatabase[req.params.shortURL].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to edit this URL");
   }
   const shortURL = req.params.shortURL;
@@ -162,7 +164,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //get for login
 app.get("/login", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]] };
+  let templateVars = { user: users[req.session.user_id] };
   if (templateVars.user) {
     res.redirect("/urls");
   } else {
@@ -180,19 +182,19 @@ app.post("/login", (req, res) => {
   if (!bcrypt.compareSync(password, user.password)) {
    return res.status(403).send("Password is incorrect!");
   }
-    res.cookie("user_id", user.id);
+    req.session.user_id = user.id;
     res.redirect("/urls");
 });
 
 //post for logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login");
 });
 
 //get for register
 app.get("/register", (req, res) => {
-  templateVars = { user: users[req.cookies["user_id"]] }
+  templateVars = { user: users[req.session.user_id] }
   if (templateVars.user) {
     res.redirect("/urls");
   } else {
@@ -209,8 +211,8 @@ app.post("/register", (req, res) => {
   } else if (findUserEmail(email)) {
     res.status(403).send("This email is taken!");
   } else {
-    const user_id = registerUser(email, hashedPassword);
-    res.cookie("user_id", user_id);
+    const newUserID = registerUser(email, hashedPassword);
+    req.session.user_id = newUserID;
     res.redirect("/urls");
   }
 });
