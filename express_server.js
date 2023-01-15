@@ -1,8 +1,10 @@
 const express = require("express");
-const app = express();
-const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const { generateRandomString, confirmURL, registerUser, findUserEmail, urlsForUser } = require("./helpers.js");
+const { urlDatabase, users } = require("./database");
+const app = express();
+const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
@@ -11,73 +13,73 @@ app.use(cookieSession({
   keys: ["user_id"]
 }))
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://lighthouselabs.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "http://www.google.com",
-    userID: "aJ48lW",
-  },
-};
+// const urlDatabase = {
+//   b6UTxQ: {
+//     longURL: "https://lighthouselabs.ca",
+//     userID: "aJ48lW",
+//   },
+//   i3BoGr: {
+//     longURL: "http://www.google.com",
+//     userID: "aJ48lW",
+//   },
+// };
 
-const generateRandomString = () => {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let results = '';
-  for (let i = 6; i > 0; --i) results += chars[Math.round(Math.random() * (chars.length - 1))];
-  return results;
-};
+// const generateRandomString = () => {
+//   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+//   let results = '';
+//   for (let i = 6; i > 0; --i) results += chars[Math.round(Math.random() * (chars.length - 1))];
+//   return results;
+// };
 
-const confirmURL = (URL, data) => {
-  return data[URL];
-};
+// const confirmURL = (URL, data) => {
+//   return data[URL];
+// };
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: bcrypt.hashSync("passwordOne", 10),
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: bcrypt.hashSync("passwordTwo", 10),
-  },
-};
+// const users = {
+//   userRandomID: {
+//     id: "userRandomID",
+//     email: "user@example.com",
+//     password: bcrypt.hashSync("passwordOne", 10),
+//   },
+//   user2RandomID: {
+//     id: "user2RandomID",
+//     email: "user2@example.com",
+//     password: bcrypt.hashSync("passwordTwo", 10),
+//   },
+// };
 
-const registerUser = (email, password) => {
-  const id = generateRandomString();
-  users[id] = {
-    id,
-    email,
-    password,
-  };
-  return id;
-};
+// const registerUser = (email, password) => {
+//   const id = generateRandomString();
+//   users[id] = {
+//     id,
+//     email,
+//     password,
+//   };
+//   return id;
+// };
 
-const findUserEmail = (email) => {
-  return Object.values(users).find(user => user.email === email);
-};
+// const findUserEmail = (email) => {
+//   return Object.values(users).find(user => user.email === email);
+// };
 
-const passwordCheck= (user, password) => {
-  if (user.password === password) {
-    return true;
-  } else {
-    return false;
-  }
-};
+// const passwordCheck= (user, password) => {
+//   if (user.password === password) {
+//     return true;
+//   } else {
+//     return false;
+//   }
+// };
 
-//for testing if the urls for a specific user id are equal to current user id
-const urlsForUser = (id, database) => {
-  let userURLS = {};
-  for (let key in database) {
-    if (database[key].userID === id) {
-      userURLS[key] = database[key];
-    }
-  }
-  return userURLS;
-};
+// //for testing if the urls for a specific user id are equal to current user id
+// const urlsForUser = (id, database) => {
+//   let userURLS = {};
+//   for (let key in database) {
+//     if (database[key].userID === id) {
+//       userURLS[key] = database[key];
+//     }
+//   }
+//   return userURLS;
+// };
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -90,7 +92,7 @@ app.get("/urls", (req, res) => {
     res.render("urls_errors");
   } else {
     const userID = req.session.user_id;
-    const userURLS = urlsForUser(userID, urlDatabase);
+    const userURLS = urlsForUser(userID);
     let templateVars = { urls: userURLS, user: users[req.session.user_id] };
     res.render("urls_index", templateVars);
   }
