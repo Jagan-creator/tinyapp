@@ -70,18 +70,19 @@ app.get("/urls/:shortURL", (req, res) => {
   }
   if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to view this URL");
+  } else if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(403).send("You are not able to visit this page!");
   }
-  res.render("urls_show", templateVars);
 });
 
 //checks to see if long URL is working and if so it will redirect the user to the new page
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (confirmURL(shortURL, urlDatabase)) {
-    const longURL = urlDatabase[shortURL].longURL;
+    const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
-  } else {
-    res.status(404).send("The URL you are requesting is not available.");
   }
 });
 
