@@ -16,16 +16,13 @@ app.use(cookieSession({
 }));
 
 // GET AND POST CALLS
-// redirects user to register or login if they have not or sends to urls_index if they have
+// redirects user to /urls if they are logged in and /login if they are not
 app.get("/", (req, res) => {
   let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
-  if (!templateVars.user) {
-    res.render("urls_errors");
+  if (templateVars.user) {
+    res.redirect("/urls");
   } else {
-    const userID = req.session.user_id;
-    const userURLS = urlsForUser(userID);
-    let templateVars = { urls: userURLS, user: users[req.session.user_id] };
-    res.render("urls_index", templateVars);
+    res.redirect("/login");
   }
 });
 
@@ -67,7 +64,13 @@ app.get("/urls/new", (req, res) => {
 
 //render shortURL page with appropriate information
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
+  if (!templateVars.user) {
+    return res.status(400).send(`You need to be <a href="/login">logged in</a> to view this short URL`);
+  }
+  if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
+    return res.status(403).send("You are not able to view this URL");
+  }
   res.render("urls_show", templateVars);
 });
 
