@@ -81,7 +81,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (confirmURL(shortURL, urlDatabase)) {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
+    const longURL = urlDatabase[shortURL].longURL;
     res.redirect(longURL);
   }
 });
