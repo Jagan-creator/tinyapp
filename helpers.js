@@ -40,4 +40,15 @@ const urlsForUser = (id) => {
   return userURLS;
 };
 
-module.exports = { generateRandomString, confirmURL, registerUser, findUserEmail, urlsForUser };
+//checks to see if the URL is properly formatted before posting
+const checkURLValid = (string) => {
+  let url;
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+module.exports = { generateRandomString, confirmURL, registerUser, findUserEmail, urlsForUser, checkURLValid };

@@ -2,7 +2,7 @@
 const express = require("express");
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
-const { generateRandomString, confirmURL, registerUser, findUserEmail, urlsForUser } = require("./helpers.js");
+const { generateRandomString, confirmURL, registerUser, findUserEmail, urlsForUser, checkURLValid } = require("./helpers.js");
 const { urlDatabase, users } = require("./database");
 const app = express();
 const PORT = 8080;
@@ -44,12 +44,14 @@ app.post("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   if (!templateVars.user) {
     res.status(401).send("You must be logged in to shorten a URL!");
-  } else {
+  }
+  if (!checkURLValid(req.body.longURL)) {
+    return res.status(400).send("Please enter a valid URL.");
+  }
     const shortURL = generateRandomString();
     const newURL = req.body.longURL;
     urlDatabase[shortURL] = { longURL: newURL, userID: req.session.user_id };
     res.redirect(`/urls/${shortURL}`);
-  }
 });
 
 //requires user to login and if they are then they can access the page to make new URL's
@@ -64,7 +66,13 @@ app.get("/urls/new", (req, res) => {
 
 //render shortURL page with appropriate information
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    return res.status(404).send("That URL does not exist!");
+  }
+  let templateVars = { 
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    user: users[req.session.user_id] };
   if (!templateVars.user) {
     return res.status(400).send(`You need to be <a href="/login">logged in</a> to view this short URL`);
   }
@@ -109,9 +117,12 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
     return res.status(403).send("You are not able to edit this URL");
   }
+  if (!checkURLValid(req.body.longURL)) {
+    return res.status(400).send("Please enter a valid URL.");
+  }
   const shortURL = req.params.shortURL;
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  res.redirect("/urls");
 });
 
 //if already logged in it will redirect to /urls and if not it will render the login page
